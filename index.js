@@ -9,11 +9,7 @@ const TRATAMIENTOS   = [
 ];
 
 app.use(function (req, res, next) {
-  const origin = req.headers.origin || '';
-  const allowed = ['https://equi-libra.cl', 'https://www.equi-libra.cl'];
-  if (allowed.includes(origin) || origin.startsWith('http://localhost')) {
-    res.header('Access-Control-Allow-Origin', origin);
-  }
+  res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET');
   next();
 });
