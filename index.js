@@ -26,25 +26,20 @@ function toDateStr(d) {
 }
 
 // Extrae el primer horario disponible del formato Reservo
+// La API devuelve un ARRAY de objetos día: [{ fecha, sucursales: [...] }, ...]
 function extractFirstSlot(data, dateStr) {
-  // Formato real: { fecha, sucursales: [{ profesionales: [{ horas_disponibles: [...ISO] }] }] }
-  if (data && data.sucursales) {
-    for (const suc of data.sucursales) {
+  const days = Array.isArray(data) ? data : [data];
+  for (const day of days) {
+    for (const suc of (day.sucursales || [])) {
       for (const prof of (suc.profesionales || [])) {
         for (const horaISO of (prof.horas_disponibles || [])) {
           const dt = new Date(horaISO);
           const hh = String(dt.getHours()).padStart(2, '0');
           const mm = String(dt.getMinutes()).padStart(2, '0');
-          return { date: data.fecha || dateStr, time: `${hh}:${mm}` };
+          return { date: day.fecha || dateStr, time: `${hh}:${mm}` };
         }
       }
     }
-    return null; // sucursales existe pero sin horas
-  }
-  // Formato simple: array de strings
-  const slots = Array.isArray(data) ? data : (data.horarios || data.slots || []);
-  if (slots.length > 0 && typeof slots[0] === 'string') {
-    return { date: dateStr, time: slots[0].substring(0, 5) };
   }
   return null;
 }
