@@ -69,6 +69,27 @@ app.get('/next-slot', async (req, res) => {
   res.json({ date: null, time: null });
 });
 
+app.get('/debug', async (req, res) => {
+  const base = new Date();
+  const results = [];
+  for (let i = 0; i <= 3; i++) {
+    const date = new Date(base);
+    date.setDate(base.getDate() + i);
+    const dateStr = toDateStr(date);
+    for (const trat of TRATAMIENTOS) {
+      try {
+        const url = `https://reservo.cl/APIpublica/v2/agenda_online/${RESERVO_AGENDA}/horarios_disponibles/?uuid_tratamiento=${trat}&fecha=${dateStr}`;
+        const r = await fetch(url, { headers: { 'Authorization': `Token ${RESERVO_TOKEN}` } });
+        const raw = await r.text();
+        results.push({ date: dateStr, trat, status: r.status, raw: raw.substring(0, 500) });
+      } catch (e) {
+        results.push({ date: dateStr, trat, error: e.message });
+      }
+    }
+  }
+  res.json(results);
+});
+
 app.get('/health', (_req, res) => res.json({ ok: true }));
 
 const PORT = process.env.PORT || 3000;
