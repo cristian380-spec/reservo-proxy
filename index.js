@@ -29,10 +29,10 @@ function extractFirstSlot(data, dateStr) {
     for (const suc of (day.sucursales || [])) {
       for (const prof of (suc.profesionales || [])) {
         for (const horaISO of (prof.horas_disponibles || [])) {
-          const dt = new Date(horaISO);
-          const hh = String(dt.getHours()).padStart(2, '0');
-          const mm = String(dt.getMinutes()).padStart(2, '0');
-          return { date: day.fecha || dateStr, time: `${hh}:${mm}` };
+          // Extraer HH:MM directo del ISO string — evita conversión UTC del servidor
+          // "2026-04-29T08:00:00-04:00" → "08:00"
+          const time = horaISO.substring(11, 16);
+          return { date: day.fecha || dateStr, time };
         }
       }
     }
