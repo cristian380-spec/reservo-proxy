@@ -1,0 +1,15 @@
+{
+  "name": "reservo-proxy",
+  "version": "1.0.0",
+  "description": "Proxy Reservo API para Equilibra",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
