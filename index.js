@@ -21,6 +21,13 @@ function toDateStr(d) {
   return `${y}-${m}-${dd}`;
 }
 
+// Acorta nombre: "Dr. Cristian Andrés Vallejos Vega" → "Dr. Cristian Vallejos"
+function shortName(nombre) {
+  const p = nombre.split(' ');
+  if (p.length >= 4) return p[0] + ' ' + p[1] + ' ' + p[p.length - 2];
+  return nombre;
+}
+
 // Extrae el primer horario disponible del formato Reservo
 // La API devuelve un ARRAY de objetos día: [{ fecha, sucursales: [...] }, ...]
 function extractFirstSlot(data, dateStr) {
@@ -29,10 +36,12 @@ function extractFirstSlot(data, dateStr) {
     for (const suc of (day.sucursales || [])) {
       for (const prof of (suc.profesionales || [])) {
         for (const horaISO of (prof.horas_disponibles || [])) {
-          // Extraer HH:MM directo del ISO string — evita conversión UTC del servidor
-          // "2026-04-29T08:00:00-04:00" → "08:00"
           const time = horaISO.substring(11, 16);
-          return { date: day.fecha || dateStr, time };
+          return {
+            date: day.fecha || dateStr,
+            time,
+            profesional: shortName(prof.nombre || '')
+          };
         }
       }
     }
