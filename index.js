@@ -66,7 +66,8 @@ app.get('/slots', async (req, res) => {
   try {
     const r = await fetch(`${BASE}/horarios_disponibles/?uuid_tratamiento=${tratamiento}&fecha=${fecha}`, { headers: H });
     if (!r.ok) return res.json({ slots: [] });
-    const data = await r.json();
+    const text = await r.text();
+    let data; try { data = JSON.parse(text); } catch(e) { return res.json({ slots: [] }); }
     const days = Array.isArray(data) ? data : [data];
     const slots = [];
     for (const day of days) {
@@ -105,7 +106,17 @@ app.post('/agendar', async (req, res) => {
         cliente: { nombre, apellido, email, telefono, rut, fecha_nacimiento }
       })
     });
-    const data = await r.json();
+    const text = await r.text();
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch(e) {
+      // Reservo devolvió HTML (error del servidor o slot inválido)
+      if (!r.ok) {
+        return res.status(r.status).json({ error: 'Horario no disponible o ya reservado. Intenta con otro horario.' });
+      }
+      return res.status(500).json({ error: 'Respuesta inesperada del servidor de agenda.' });
+    }
     res.status(r.status).json(data);
   } catch(e) {
     res.status(500).json({ error: e.message });
