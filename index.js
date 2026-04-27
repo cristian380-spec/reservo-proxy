@@ -142,27 +142,25 @@ app.get('/debug', async (req, res) => {
 });
 
 // ── GET /lookup-rut?rut=12.345.678-9 ──────────────────────────────────────
+// Usa /makereserva/existencia_rut_api/ (doc oficial Reservo)
 app.get('/lookup-rut', async (req, res) => {
   const { rut } = req.query;
   if (!rut) return res.status(400).json({ error: 'Falta RUT' });
+  // Reservo exige RUT sin puntos, con guión: "12345678-9"
+  const cleanRut = rut.replace(/\./g, '');
   try {
-    const r = await fetch(`${BASE}/clientes/?rut=${encodeURIComponent(rut)}`, { headers: H });
-    if (!r.ok) return res.json({ found: false });
-    const data = await r.json();
-    const results = Array.isArray(data) ? data : (data.results || []);
-    if (!results.length) return res.json({ found: false });
-    const c = results[0];
-    // Normalize phone: strip leading +56 or 56, return digits only
-    const tel = (c.telefono || '').replace(/^\+?56/, '').replace(/\D/g, '');
-    res.json({
-      found:            true,
-      nombre:           c.nombre           || '',
-      apellido:         c.apellido         || '',
-      email:            c.email            || '',
-      telefono:         tel,
-      rut:              c.rut              || rut,
-      fecha_nacimiento: c.fecha_nacimiento || ''
+    const r = await fetch('https://reservo.cl/makereserva/existencia_rut_api/', {
+      method: 'POST',
+      headers: H,
+      body: JSON.stringify({ rut: cleanRut })
     });
+    const text = await r.text();
+    let data;
+    try { data = JSON.parse(text); } catch(e) { return res.json({ found: false }); }
+
+    if (data.marcado === 1) return res.json({ found: false, blocked: true });
+    if (data.existe === 1)  return res.json({ found: true, uuid: data.paciente });
+    res.json({ found: false });
   } catch(e) {
     res.json({ found: false });
   }
