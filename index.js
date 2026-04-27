@@ -130,6 +130,33 @@ app.get('/debug', async (req, res) => {
   res.json(results);
 });
 
+// ── GET /lookup-rut?rut=12.345.678-9 ──────────────────────────────────────
+app.get('/lookup-rut', async (req, res) => {
+  const { rut } = req.query;
+  if (!rut) return res.status(400).json({ error: 'Falta RUT' });
+  try {
+    const r = await fetch(`${BASE}/clientes/?rut=${encodeURIComponent(rut)}`, { headers: H });
+    if (!r.ok) return res.json({ found: false });
+    const data = await r.json();
+    const results = Array.isArray(data) ? data : (data.results || []);
+    if (!results.length) return res.json({ found: false });
+    const c = results[0];
+    // Normalize phone: strip leading +56 or 56, return digits only
+    const tel = (c.telefono || '').replace(/^\+?56/, '').replace(/\D/g, '');
+    res.json({
+      found:            true,
+      nombre:           c.nombre           || '',
+      apellido:         c.apellido         || '',
+      email:            c.email            || '',
+      telefono:         tel,
+      rut:              c.rut              || rut,
+      fecha_nacimiento: c.fecha_nacimiento || ''
+    });
+  } catch(e) {
+    res.json({ found: false });
+  }
+});
+
 app.get('/health', (_req, res) => res.json({ ok: true }));
 
 const PORT = process.env.PORT || 3000;
