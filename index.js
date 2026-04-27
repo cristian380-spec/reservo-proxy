@@ -190,6 +190,41 @@ app.get('/lookup-rut', async (req, res) => {
   }
 });
 
+// ── GET /debug-paciente?rut=12345678-9 ────────────────────────────────────
+app.get('/debug-paciente', async (req, res) => {
+  const { rut } = req.query;
+  if (!rut) return res.status(400).json({ error: 'Falta RUT' });
+  const cleanRut = rut.replace(/\./g, '');
+  const results = {};
+  // Step 1: existencia
+  try {
+    const r1 = await fetch('https://reservo.cl/makereserva/existencia_rut_api/', {
+      method: 'POST', headers: H, body: JSON.stringify({ rut: cleanRut })
+    });
+    const t1 = await r1.text();
+    results.step1_status = r1.status;
+    results.step1_raw = t1.substring(0, 500);
+    let d1; try { d1 = JSON.parse(t1); } catch(e) { d1 = null; }
+    results.step1_parsed = d1;
+    // Step 2: cliente detail
+    if (d1 && d1.existe === 1) {
+      const uuid = d1.paciente;
+      const r2 = await fetch(`${BASE}/clientes/${uuid}/`, { headers: H });
+      const t2 = await r2.text();
+      results.step2_url = `${BASE}/clientes/${uuid}/`;
+      results.step2_status = r2.status;
+      results.step2_raw = t2.substring(0, 1000);
+      // Also try list endpoint
+      const r3 = await fetch(`${BASE}/clientes/?rut=${encodeURIComponent(cleanRut)}`, { headers: H });
+      const t3 = await r3.text();
+      results.step3_url = `${BASE}/clientes/?rut=${cleanRut}`;
+      results.step3_status = r3.status;
+      results.step3_raw = t3.substring(0, 1000);
+    }
+  } catch(e) { results.error = e.message; }
+  res.json(results);
+});
+
 app.get('/health', (_req, res) => res.json({ ok: true }));
 
 const PORT = process.env.PORT || 3000;
