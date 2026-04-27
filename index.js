@@ -114,11 +114,16 @@ app.post('/agendar', async (req, res) => {
     try {
       data = JSON.parse(text);
     } catch(e) {
-      // Reservo devolvió HTML (error del servidor o slot inválido)
-      if (!r.ok) {
-        return res.status(r.status).json({ error: 'Horario no disponible o ya reservado. Intenta con otro horario.' });
-      }
-      return res.status(500).json({ error: 'Respuesta inesperada del servidor de agenda.' });
+      // Reservo devolvió HTML — exponer raw para diagnóstico
+      return res.status(r.ok ? 500 : r.status).json({
+        error: 'Respuesta no-JSON de Reservo',
+        reservo_status: r.status,
+        reservo_raw: text.substring(0, 400)
+      });
+    }
+    // JSON pero con error de Reservo
+    if (!r.ok) {
+      return res.status(r.status).json({ error: data.detail || data.error || JSON.stringify(data), reservo_data: data });
     }
     res.status(r.status).json(data);
   } catch(e) {
