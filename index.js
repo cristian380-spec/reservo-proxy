@@ -162,7 +162,28 @@ app.get('/lookup-rut', async (req, res) => {
     try { data = JSON.parse(text); } catch(e) { return res.json({ found: false }); }
 
     if (data.marcado === 1) return res.json({ found: false, blocked: true });
-    if (data.existe === 1)  return res.json({ found: true, uuid: data.paciente });
+    if (data.existe === 1) {
+      const uuid = data.paciente;
+      // Intentar obtener datos del paciente por UUID
+      try {
+        const r2 = await fetch(`${BASE}/clientes/${uuid}/`, { headers: H });
+        const t2 = await r2.text();
+        let p;
+        try { p = JSON.parse(t2); } catch(e) { p = null; }
+        if (p && r2.ok) {
+          return res.json({
+            found: true, uuid,
+            nombre:           p.nombre    || p.first_name || null,
+            apellido:         p.apellido  || p.last_name  || null,
+            email:            p.email     || null,
+            telefono:         p.telefono  || p.phone      || null,
+            fecha_nacimiento: p.fecha_nacimiento           || null
+          });
+        }
+      } catch(e) {}
+      // Si falla la 2da llamada, devolver solo UUID
+      return res.json({ found: true, uuid });
+    }
     res.json({ found: false });
   } catch(e) {
     res.json({ found: false });
