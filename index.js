@@ -94,8 +94,11 @@ app.get('/slots', async (req, res) => {
 
 // ── POST /agendar ──────────────────────────────────────────────────────────
 app.post('/agendar', async (req, res) => {
-  const { hora_iso, tratamiento, calendario, nombre, apellido, email, telefono, rut, fecha_nacimiento } = req.body;
+  const { hora_iso, tratamiento, calendario, nombre, apellido, email, telefono, rut, fecha_nacimiento, paciente_uuid } = req.body;
   try {
+    const cliente = paciente_uuid
+      ? { uuid: paciente_uuid }
+      : { nombre, apellido, email, telefono, rut, fecha_nacimiento };
     const r = await fetch(`${BASE}/citas/`, {
       method: 'POST',
       headers: H,
@@ -103,7 +106,7 @@ app.post('/agendar', async (req, res) => {
         hora_iso,
         tratamientos: [tratamiento],
         calendario,
-        cliente: { nombre, apellido, email, telefono, rut, fecha_nacimiento }
+        cliente
       })
     });
     const text = await r.text();
